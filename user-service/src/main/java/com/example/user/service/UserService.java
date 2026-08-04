@@ -3,17 +3,20 @@ package com.example.user.service;
 import com.example.user.dto.request.LoginRequest;
 import com.example.user.dto.request.RegisterRequest;
 import com.example.user.dto.response.LoginResponse;
+import com.example.user.dto.response.UserInfoResponse;
 import com.example.user.entity.User;
 import com.example.user.enums.Role;
 import com.example.user.exception.EmailAlreadyExistsException;
 import com.example.user.exception.PasswordMismatchException;
 import com.example.user.exception.UserNotFoundException;
 import com.example.user.exception.UsernameAlreadyExistsException;
+import com.example.user.security.CustomUserDetails;
 import lombok.RequiredArgsConstructor;
 import com.example.user.mapper.UserMapper;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -21,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.example.user.repository.UserRepository;
 import com.example.user.security.JwtTokenProvider;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -85,6 +89,19 @@ public class UserService {
                 user.getUsername(),
                 user.getEmail(),
                 user.getRoles()
+        );
+    }
+
+    public UserInfoResponse getUserInfo(CustomUserDetails principal) {
+        List<String> roles = principal.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .toList();
+
+        return new UserInfoResponse(
+                principal.getUserId(),
+                principal.getUsername(),
+                principal.getEmail(),
+                roles
         );
     }
 }
