@@ -46,7 +46,7 @@ public class UserService {
         User user = mapper.toEntity(request);
         String encodedPassword = passwordEncoder.encode(request.password());
         user.setPassword(encodedPassword);
-        user.setRoles(Set.of(Role.USER));
+        user.getRoles().add(Role.USER);
 
         return userRepository.save(user);
     }

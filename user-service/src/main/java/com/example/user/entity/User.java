@@ -33,6 +33,7 @@ public class User {
     @ElementCollection(fetch = FetchType.LAZY)
     @CollectionTable(name = "user_roles", joinColumns = @JoinColumn(name = "user_id"))
     @Column(name = "role")
+    @Enumerated(EnumType.STRING)
     private Set<Role> roles = new HashSet<>();
 
     @Column(nullable = false)
