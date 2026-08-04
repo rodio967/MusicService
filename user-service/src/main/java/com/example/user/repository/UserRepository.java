@@ -27,4 +27,12 @@ public interface UserRepository extends JpaRepository<User, Long> {
             """)
     Optional<User> findByUsernameWithRoles(@Param("username") String username);
 
+    @Query("""
+            SELECT DISTINCT u
+            FROM User u
+            LEFT JOIN FETCH u.roles
+            WHERE u.id = :id
+            """)
+    Optional<User> findByIdWithRoles(@Param("id") Long id);
+
 }

@@ -24,4 +24,13 @@ public class CustomUserDetailsService implements UserDetailsService {
 
         return CustomUserDetails.build(user);
     }
+
+    public UserDetails loadUserById(Long userId) throws UsernameNotFoundException {
+        User user = userRepository.findByIdWithRoles(userId)
+                .orElseThrow(() -> new UsernameNotFoundException(
+                        "Пользователь с id (" + userId + ") не найден"
+                ));
+
+        return CustomUserDetails.build(user);
+    }
 }

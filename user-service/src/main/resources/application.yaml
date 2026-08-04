@@ -42,7 +42,7 @@
 
   # ===== JWT Configuration =====
   jwt:
-    secret: ${JWT_SECRET:your-jwt-secret}
+    secret: ${JWT_SECRET}
     expiration-ms: 86400000
 
   # ===== Secure =====

@@ -1,16 +1,17 @@
 package com.example.user.security;
 
 import io.jsonwebtoken.*;
+import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 
 import javax.crypto.SecretKey;
-import java.nio.charset.StandardCharsets;
 import java.util.Date;
+import java.util.Optional;
 
 @Slf4j
 @Component
@@ -18,62 +19,65 @@ public class JwtTokenProvider {
 
     private final SecretKey secretKey;
     private final long jwtExpirationMs;
+    private final JwtParser jwtParser;
 
     public JwtTokenProvider(
-            @Value("${jwt.secret}") String secret,
+            @Value("${jwt.secret}") String encodedSecret,
             @Value("${jwt.expiration-ms}") long jwtExpirationMs
     ) {
-        this.secretKey = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+        if (!StringUtils.hasText(encodedSecret)) {
+            throw new IllegalArgumentException("JWT secret должен быть не пустым");
+        }
+        if (jwtExpirationMs <= 0) {
+            throw new IllegalArgumentException("JWT expiration должен быть положительным");
+        }
+
+        this.secretKey = Keys.hmacShaKeyFor(Decoders.BASE64.decode(encodedSecret));
         this.jwtExpirationMs = jwtExpirationMs;
+        this.jwtParser = Jwts.parser()
+                .verifyWith(secretKey)
+                .build();
     }
 
     public String generateToken(Authentication authentication) {
-        UserDetails userDetails = (UserDetails) authentication.getPrincipal();
-        return generateTokenFromUsername(userDetails.getUsername());
+        if (!(authentication.getPrincipal() instanceof CustomUserDetails userDetails)) {
+            throw new IllegalArgumentException("Unsupported authentication principal");
+        }
+
+        return generateTokenFromUserId(userDetails.getUserId());
     }
 
+    private String generateTokenFromUserId(Long userId) {
+        if (userId == null) {
+            throw new IllegalArgumentException("User id must not be null");
+        }
 
-    public String generateTokenFromUsername(String username) {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + jwtExpirationMs);
 
         return Jwts.builder()
-                .subject(username)
+                .subject(userId.toString())
                 .issuedAt(now)
                 .expiration(expiryDate)
                 .signWith(secretKey)
                 .compact();
     }
 
-    public String getUsernameFromToken(String token) {
-        Claims claims = Jwts.parser()
-                .verifyWith(secretKey)
-                .build()
-                .parseSignedClaims(token)
-                .getPayload();
-
-        return claims.getSubject();
-    }
-
-
-    public boolean validateToken(String token) {
+    public Optional<Long> getUserIdIfTokenValid(String token) {
         try {
-            Jwts.parser()
-                    .verifyWith(secretKey)
-                    .build()
-                    .parseSignedClaims(token);
-            return true;
-        } catch (SecurityException ex) {
-            log.warn("Invalid JWT signature");
-        } catch (MalformedJwtException ex) {
-            log.warn("Malformed JWT token");
+            Claims claims = jwtParser
+                    .parseSignedClaims(token)
+                    .getPayload();
+
+            return Optional.ofNullable(claims.getSubject())
+                    .filter(StringUtils::hasText)
+                    .map(Long::valueOf);
         } catch (ExpiredJwtException ex) {
-            log.info("Expired JWT token");
-        } catch (UnsupportedJwtException ex) {
-            log.warn("Unsupported JWT token");
-        } catch (IllegalArgumentException ex) {
-            log.warn("JWT claims string is empty");
+            log.error("Expired JWT token");
+        } catch (JwtException | IllegalArgumentException ex) {
+            log.error("Invalid JWT token");
         }
-        return false;
+
+        return Optional.empty();
     }
 }
