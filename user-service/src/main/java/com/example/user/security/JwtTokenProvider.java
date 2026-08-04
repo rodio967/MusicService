@@ -1,7 +1,6 @@
 package com.example.user.security;
 
 import io.jsonwebtoken.*;
-import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -10,6 +9,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
 import javax.crypto.SecretKey;
+import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.Optional;
 
@@ -22,17 +22,17 @@ public class JwtTokenProvider {
     private final JwtParser jwtParser;
 
     public JwtTokenProvider(
-            @Value("${jwt.secret}") String encodedSecret,
+            @Value("${jwt.secret}") String secret,
             @Value("${jwt.expiration-ms}") long jwtExpirationMs
     ) {
-        if (!StringUtils.hasText(encodedSecret)) {
+        if (!StringUtils.hasText(secret)) {
             throw new IllegalArgumentException("JWT secret должен быть не пустым");
         }
         if (jwtExpirationMs <= 0) {
             throw new IllegalArgumentException("JWT expiration должен быть положительным");
         }
 
-        this.secretKey = Keys.hmacShaKeyFor(Decoders.BASE64.decode(encodedSecret));
+        this.secretKey = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
         this.jwtExpirationMs = jwtExpirationMs;
         this.jwtParser = Jwts.parser()
                 .verifyWith(secretKey)

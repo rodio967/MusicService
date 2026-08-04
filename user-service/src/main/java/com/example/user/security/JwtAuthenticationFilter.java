@@ -39,14 +39,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             Optional<Long> userId = tokenProvider.getUserIdIfTokenValid(jwt);
 
             if (userId.isPresent()) {
-                authenticateUser(userId.get(), request);
+                authenticateUser(userId.get());
             }
         }
 
         filterChain.doFilter(request, response);
     }
 
-    private void authenticateUser(Long userId, HttpServletRequest request) {
+    private void authenticateUser(Long userId) {
         try {
             UserDetails userDetails = userDetailsService.loadUserById(userId);
 
@@ -62,7 +62,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                             userDetails.getAuthorities()
                     );
 
-            authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
             SecurityContextHolder.getContext().setAuthentication(authentication);
         } catch (UsernameNotFoundException ex) {
             log.debug("JWT belongs to a user that no longer exists: {}", userId);
