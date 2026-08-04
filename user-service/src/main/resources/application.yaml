@@ -1,0 +1,79 @@
+  server:
+    port: 8081
+
+  spring:
+    application:
+      name: user-service
+
+    # ===== Database Configuration =====
+    datasource:
+      url: jdbc:h2:mem:userdb
+      driver-class-name: org.h2.Driver
+      username: sa
+      password: ""
+
+    jpa:
+      database-platform: org.hibernate.dialect.H2Dialect
+      hibernate:
+        ddl-auto: update
+      show-sql: false
+      properties:
+        hibernate:
+          format_sql: true
+
+    # H2 Console
+    h2:
+      console:
+        enabled: true
+        path: /h2-console
+
+    # PostgreSQL Configuration
+    # datasource:
+    #   url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:contest}
+    #   username: ${DB_USER:postgres}
+    #   password: ${DB_PASSWORD:postgres}
+    #   driver-class-name: org.postgresql.Driver
+    #
+    # jpa:
+    #   database: postgresql
+    #   database-platform: org.hibernate.dialect.PostgreSQLDialect
+    #   hibernate:
+    #     ddl-auto: none
+
+  # ===== JWT Configuration =====
+  jwt:
+    secret: ${JWT_SECRET:your-jwt-secret}
+    expiration-ms: 86400000
+
+  # ===== Secure =====
+  encryption:
+    token-secret: ${TOKEN_ENCRYPTION_KEY}
+
+  internal:
+    api:
+      secret: ${INTERNAL_API_SECRET}
+
+  # ===== OAuth2 Spotify Configuration =====
+  spotify:
+    client-id: ${SPOTIFY_CLIENT_ID:your-spotify-client-id}
+    client-secret: ${SPOTIFY_CLIENT_SECRET:your-spotify-client-secret}
+    redirect-uri: ${SPOTIFY_REDIRECT_URI:http://localhost:8081/api/oauth/spotify/callback}
+
+  # ===== Yandex OAuth Configuration =====
+  yandex:
+    client-id: ${YANDEX_CLIENT_ID:your-yandex-client-id}
+    client-secret: ${YANDEX_CLIENT_SECRET:your-yandex-client-secret}
+    redirect-uri: http://localhost:8081/api/oauth/yandex/callback
+
+  # ===== YouTube/Google OAuth Configuration =====
+  youtube:
+    client-id: ${YOUTUBE_CLIENT_ID:your-youtube-client-id}
+    client-secret: ${YOUTUBE_CLIENT_SECRET:your-youtube-client-secret}
+    redirect-uri: http://127.0.0.1:8081/api/oauth/youtube/callback
+
+  # ===== Logging =====
+  logging:
+    level:
+      "ru.nsu.melody_shift": DEBUG
+      "org.springframework.security": DEBUG
+      "org.hibernate.SQL": WARN
