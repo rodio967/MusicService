@@ -15,5 +15,8 @@ public record SpotifyOAuthProperties(
         @NotBlank String clientId,
         @NotBlank String clientSecret,
         @NotNull URI redirectUri,
+        @NotNull URI authUri,
+        @NotNull URI tokenUri,
+        @NotNull URI profileUri,
         @NotEmpty Set<String> scopes
-) {}
+) implements OAuthProviderProperties {}

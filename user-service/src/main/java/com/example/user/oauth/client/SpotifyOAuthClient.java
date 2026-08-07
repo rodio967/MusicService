@@ -1,21 +1,26 @@
 package com.example.user.oauth.client;
 
 import com.example.user.enums.MusicPlatform;
+import com.example.user.oauth.dto.OAuthTokenResponse;
+import com.example.user.oauth.dto.ProviderAccountInfo;
 import com.example.user.oauth.properties.SpotifyOAuthProperties;
-import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
+import org.springframework.web.client.RestClient;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.net.URI;
 
 
 @Component
-@RequiredArgsConstructor
 public class SpotifyOAuthClient extends AbstractOAuthClient {
 
-    private final SpotifyOAuthProperties properties;
-
-    private static final URI AUTHORIZATION_URI = URI.create("https://accounts.spotify.com/authorize");
+    public SpotifyOAuthClient(SpotifyOAuthProperties properties, RestClient restClient) {
+        super(properties, restClient);
+    }
 
 
     @Override
@@ -25,15 +30,44 @@ public class SpotifyOAuthClient extends AbstractOAuthClient {
 
     @Override
     public URI buildAuthorizationUri(String state) {
-        return UriComponentsBuilder.fromUri(AUTHORIZATION_URI)
+        return UriComponentsBuilder.fromUri(properties.authUri())
                 .queryParam("response_type", "code")
                 .queryParam("client_id", properties.clientId())
-                .queryParam("redirect_uri", properties.clientSecret())
+                .queryParam("redirect_uri", properties.redirectUri())
                 .queryParam("scope", String.join(" ", properties.scopes()))
                 .queryParam("state", state)
                 .build()
-                .encode()
                 .toUri();
+    }
+
+
+    @Override
+    protected OAuthTokenResponse fetchToken(String code) {
+        return restClient.post()
+                .uri(properties.tokenUri())
+                .header(HttpHeaders.AUTHORIZATION, "Basic " + encodeCredentials())
+                .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                .body(buildRequestBody(code))
+                .retrieve()
+                .body(OAuthTokenResponse.class);
+    }
+
+    @Override
+    protected ProviderAccountInfo fetchAccountInfo(String accessToken) {
+        return restClient.get()
+                .uri(properties.profileUri())
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken)
+                .retrieve()
+                .body(ProviderAccountInfo.class);
+    }
+
+    private MultiValueMap<String, String> buildRequestBody(String code) {
+        MultiValueMap<String, String> requestBody = new LinkedMultiValueMap<>();
+        requestBody.add("grant_type", "authorization_code");
+        requestBody.add("code", code);
+        requestBody.add("redirect_uri", properties.redirectUri().toString());
+
+        return requestBody;
     }
 
 

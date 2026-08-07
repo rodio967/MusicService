@@ -3,20 +3,20 @@ package com.example.user.oauth.controller;
 
 import com.example.user.oauth.facade.OAuthFacade;
 import com.example.user.security.CustomUserDetails;
+import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
 
 @RestController
 @RequestMapping("/api/oauth")
 @RequiredArgsConstructor
+@Validated
 public class OAuthController {
 
     private final OAuthFacade facade;
@@ -38,6 +38,23 @@ public class OAuthController {
 
         return ResponseEntity.status(HttpStatus.FOUND)
                 .location(authorizationUri)
+                .build();
+    }
+
+    @GetMapping("/{platform}/callback")
+    public ResponseEntity<Void> callback(
+            @PathVariable String platform,
+            @RequestParam @NotBlank String state,
+            @RequestParam(required = false) String code,
+            @RequestParam(required = false) String error
+    ) {
+
+        facade.completeAuthorization(platform, state, code, error);
+
+        URI redirect = URI.create("/dashboard?success=" + platform + "_connected");
+
+        return ResponseEntity.status(HttpStatus.FOUND)
+                .location(redirect)
                 .build();
     }
 
