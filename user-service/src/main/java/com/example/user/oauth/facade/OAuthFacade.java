@@ -3,11 +3,13 @@ package com.example.user.oauth.facade;
 import com.example.user.entity.User;
 import com.example.user.enums.MusicPlatform;
 import com.example.user.oauth.client.OAuthProviderClient;
+import com.example.user.oauth.connection.OAuthConnectionEntity;
 import com.example.user.oauth.connection.OAuthConnectionService;
 import com.example.user.oauth.dto.OAuthTokenResponse;
 import com.example.user.oauth.dto.ProviderAccountInfo;
 import com.example.user.oauth.exception.InvalidOAuthStateException;
 import com.example.user.oauth.exception.OAuthAuthorizationException;
+import com.example.user.oauth.exception.ReauthorizationRequiredException;
 import com.example.user.oauth.registry.OAuthClientRegistry;
 import com.example.user.oauth.state.OAuthStateStore;
 import com.example.user.service.UserService;
@@ -57,6 +59,28 @@ public class OAuthFacade {
         ProviderAccountInfo accountInfo = client.fetchProviderAccount(tokenResponse.accessToken());
 
         connectionService.saveOrUpdateConnection(user, musicPlatform, tokenResponse, accountInfo);
+    }
+
+
+    public String getValidAccessToken(Long userId, String platform) {
+        MusicPlatform musicPlatform = MusicPlatform.toPlatform(platform);
+        OAuthConnectionEntity entity = connectionService.getConnection(userId, musicPlatform);
+
+        if (entity.isTokenValid()) {
+            return entity.getAccessToken();
+        }
+
+        OAuthProviderClient client = clients.get(musicPlatform);
+
+        if (entity.getRefreshToken() == null || entity.getRefreshToken().isBlank()) {
+            throw new ReauthorizationRequiredException(musicPlatform);
+        }
+
+        OAuthTokenResponse tokenResponse = client.refreshAccessToken(entity.getRefreshToken());
+
+        connectionService.updateTokens(entity.getId(), tokenResponse);
+
+        return tokenResponse.accessToken();
     }
 
 

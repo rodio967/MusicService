@@ -34,9 +34,12 @@ public abstract class AbstractOAuthClient implements OAuthProviderClient {
             throw new TokenExchangeException("Не удалось обменять authorization code на токен", ex);
         }
 
-        if (tokenResponse == null || tokenResponse.accessToken() == null) {
-            log.error("[{}] Ошибка при получении токена: Пустой ответ", getPlatform());
-            throw new TokenExchangeException("Провайдер вернул пустой access token");
+        if (tokenResponse == null
+                || tokenResponse.accessToken() == null
+                || tokenResponse.accessToken().isBlank()
+                || tokenResponse.expiresIn() == null) {
+            log.error("[{}] Ошибка при получении токена: Провайдер вернул некорректный ответ", getPlatform());
+            throw new TokenExchangeException("Провайдер вернул некорректный ответ с токеном");
         }
 
         log.info("[{}] Token received successfully", getPlatform());
@@ -65,9 +68,35 @@ public abstract class AbstractOAuthClient implements OAuthProviderClient {
         return providerAccount;
     }
 
+    @Override
+    public OAuthTokenResponse refreshAccessToken(String refreshToken) {
+        log.info("[{}] Refreshing access token", getPlatform());
+
+        OAuthTokenResponse tokenResponse;
+        try {
+            tokenResponse = refreshToken(refreshToken);
+        } catch (RestClientException ex) {
+            throw new TokenExchangeException("Ошибка при операции refresh", ex);
+        }
+
+        if (tokenResponse == null
+                || tokenResponse.accessToken() == null
+                || tokenResponse.accessToken().isBlank()
+                || tokenResponse.expiresIn() == null) {
+            log.error("[{}] Ошибка при refresh: Провайдер вернул некорректный ответ", getPlatform());
+            throw new TokenExchangeException("Провайдер вернул некорректный ответ при refresh");
+        }
+
+        log.info("[{}] Refresh completed successfully", getPlatform());
+
+        return tokenResponse;
+    }
+
     protected abstract OAuthTokenResponse fetchToken(String code);
 
     protected abstract ProviderAccountInfo fetchAccountInfo(String accessToken);
+
+    protected abstract OAuthTokenResponse refreshToken(String refreshToken);
 
     protected String encodeCredentials() {
         String auth = properties.clientId() + ":" + properties.clientSecret();

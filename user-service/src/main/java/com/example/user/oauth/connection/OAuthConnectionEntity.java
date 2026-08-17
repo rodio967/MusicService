@@ -73,5 +73,9 @@ public class OAuthConnectionEntity {
         updatedAt = Instant.now();
     }
 
+    public boolean isTokenValid() {
+        return expiresAt.isAfter(Instant.now().plusSeconds(60));
+    }
+
 
 }

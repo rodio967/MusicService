@@ -61,11 +61,30 @@ public class SpotifyOAuthClient extends AbstractOAuthClient {
                 .body(ProviderAccountInfo.class);
     }
 
+    @Override
+    protected OAuthTokenResponse refreshToken(String refreshToken) {
+        return restClient.post()
+                .uri(properties.tokenUri())
+                .header(HttpHeaders.AUTHORIZATION, "Basic " + encodeCredentials())
+                .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                .body(buildRequestBodyRefresh(refreshToken))
+                .retrieve()
+                .body(OAuthTokenResponse.class);
+    }
+
     private MultiValueMap<String, String> buildRequestBody(String code) {
         MultiValueMap<String, String> requestBody = new LinkedMultiValueMap<>();
         requestBody.add("grant_type", "authorization_code");
         requestBody.add("code", code);
         requestBody.add("redirect_uri", properties.redirectUri().toString());
+
+        return requestBody;
+    }
+
+    private MultiValueMap<String, String> buildRequestBodyRefresh(String refreshToken) {
+        MultiValueMap<String, String> requestBody = new LinkedMultiValueMap<>();
+        requestBody.add("grant_type", "refresh_token");
+        requestBody.add("refresh_token", refreshToken);
 
         return requestBody;
     }

@@ -14,6 +14,8 @@ public interface OAuthProviderClient {
 
     OAuthTokenResponse exchangeCode(String code);
 
+    OAuthTokenResponse refreshAccessToken(String refreshToken);
+
     ProviderAccountInfo fetchProviderAccount(String accessToken);
 
 
