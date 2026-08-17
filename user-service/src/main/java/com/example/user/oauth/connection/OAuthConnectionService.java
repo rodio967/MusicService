@@ -19,18 +19,30 @@ public class OAuthConnectionService {
 
 
     @Transactional
-    public OAuthConnectionEntity saveToken(User user, MusicPlatform platform,
-                                           OAuthTokenResponse tokenResponse,
-                                           ProviderAccountInfo accountInfo) {
+    public OAuthConnectionEntity saveOrUpdateConnection(
+            User user,
+            MusicPlatform platform,
+            OAuthTokenResponse tokenResponse,
+            ProviderAccountInfo accountInfo) {
 
-        OAuthConnectionEntity entity = new OAuthConnectionEntity();
-        entity.setUser(user);
-        entity.setPlatform(platform);
+        OAuthConnectionEntity entity = connectionRepository.findByUserIdAndPlatform(user.getId(), platform)
+                .orElseGet(() -> {
+                    OAuthConnectionEntity newEntity = new OAuthConnectionEntity();
+                    newEntity.setUser(user);
+                    newEntity.setPlatform(platform);
+
+                    return newEntity;
+                });
+
+
         entity.setProviderAccountId(accountInfo.id());
         entity.setAccessToken(tokenResponse.accessToken());
-        entity.setRefreshToken(tokenResponse.refreshToken());
         entity.setExpiresAt(Instant.now().plusSeconds(tokenResponse.expiresIn()));
         entity.setScopes(tokenResponse.scopes());
+
+        if (tokenResponse.refreshToken() != null) {
+            entity.setRefreshToken(tokenResponse.refreshToken());
+        }
 
 
         return connectionRepository.save(entity);

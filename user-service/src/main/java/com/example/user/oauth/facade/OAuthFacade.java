@@ -56,7 +56,7 @@ public class OAuthFacade {
         OAuthTokenResponse tokenResponse = client.exchangeCode(code);
         ProviderAccountInfo accountInfo = client.fetchProviderAccount(tokenResponse.accessToken());
 
-        connectionService.saveToken(user, musicPlatform, tokenResponse, accountInfo);
+        connectionService.saveOrUpdateConnection(user, musicPlatform, tokenResponse, accountInfo);
     }
 
 
