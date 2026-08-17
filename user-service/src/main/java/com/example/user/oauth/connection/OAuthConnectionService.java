@@ -7,6 +7,7 @@ import com.example.user.oauth.dto.OAuthTokenResponse;
 import com.example.user.oauth.dto.ProviderAccountInfo;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 
@@ -17,6 +18,7 @@ public class OAuthConnectionService {
     private final OAuthConnectionRepository connectionRepository;
 
 
+    @Transactional
     public OAuthConnectionEntity saveToken(User user, MusicPlatform platform,
                                            OAuthTokenResponse tokenResponse,
                                            ProviderAccountInfo accountInfo) {

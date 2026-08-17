@@ -44,7 +44,7 @@ public abstract class AbstractOAuthClient implements OAuthProviderClient {
 
         if (providerAccount == null || providerAccount.id() == null) {
             log.error("[{}] Failed to get account info — empty response", getPlatform());
-            throw new RuntimeException("Failed to get account info from " + getPlatform());
+            throw new RuntimeException("Failed to get account info from " + getPlatform()); // TODO: exception
         }
 
         log.info("[{}] Account info received successfully", getPlatform());

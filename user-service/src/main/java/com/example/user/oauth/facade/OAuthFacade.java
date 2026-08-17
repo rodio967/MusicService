@@ -3,7 +3,6 @@ package com.example.user.oauth.facade;
 import com.example.user.entity.User;
 import com.example.user.enums.MusicPlatform;
 import com.example.user.oauth.client.OAuthProviderClient;
-import com.example.user.oauth.connection.OAuthConnectionEntity;
 import com.example.user.oauth.connection.OAuthConnectionService;
 import com.example.user.oauth.dto.OAuthTokenResponse;
 import com.example.user.oauth.dto.ProviderAccountInfo;
@@ -12,7 +11,6 @@ import com.example.user.oauth.state.OAuthStateStore;
 import com.example.user.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.net.URI;
 import java.util.UUID;
@@ -27,7 +25,6 @@ public class OAuthFacade {
     private final UserService userService;
 
 
-    @Transactional
     public URI beginAuthorization(String platform, Long userId) {
         OAuthProviderClient client = clients.get(MusicPlatform.toPlatform(platform));
         String state = UUID.randomUUID().toString();
@@ -36,7 +33,7 @@ public class OAuthFacade {
         return client.buildAuthorizationUri(state);
     }
 
-    @Transactional
+
     public void completeAuthorization(String platform, String state, String code, String error) {
         Long userId = store.getAndRemove(state);
 

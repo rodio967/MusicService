@@ -21,7 +21,7 @@ public class InMemoryOAuthStateStore implements OAuthStateStore {
     public Long getAndRemove(String state) {
         StateEntry entry = store.remove(state);
 
-        if (entry == null) throw new RuntimeException("Invalid state");
+        if (entry == null) throw new RuntimeException("Invalid state"); // TODO заменить исключения
 
         if (Instant.now().isAfter(entry.expiresAt())) throw new RuntimeException("State expired");
 
