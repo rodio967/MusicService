@@ -2,6 +2,7 @@ package com.example.user.oauth.registry;
 
 import com.example.user.enums.MusicPlatform;
 import com.example.user.oauth.client.OAuthProviderClient;
+import com.example.user.oauth.exception.UnsupportedProviderException;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -27,7 +28,7 @@ public class OAuthClientRegistry {
         OAuthProviderClient client = clients.get(platform);
 
         if (client == null) {
-            throw new RuntimeException();
+            throw new UnsupportedProviderException(platform.name());
         }
 
         return client;

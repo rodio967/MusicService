@@ -6,6 +6,8 @@ import com.example.user.oauth.client.OAuthProviderClient;
 import com.example.user.oauth.connection.OAuthConnectionService;
 import com.example.user.oauth.dto.OAuthTokenResponse;
 import com.example.user.oauth.dto.ProviderAccountInfo;
+import com.example.user.oauth.exception.InvalidOAuthStateException;
+import com.example.user.oauth.exception.OAuthAuthorizationException;
 import com.example.user.oauth.registry.OAuthClientRegistry;
 import com.example.user.oauth.state.OAuthStateStore;
 import com.example.user.service.UserService;
@@ -35,10 +37,16 @@ public class OAuthFacade {
 
 
     public void completeAuthorization(String platform, String state, String code, String error) {
+        if (state == null || state.isBlank()) throw new InvalidOAuthStateException();
+
         Long userId = store.getAndRemove(state);
 
-        if (error != null) throw new RuntimeException(); //TODO: добавить свое исключение
-        if (code == null || code.isEmpty()) throw new RuntimeException();
+        if (error != null && !error.isBlank()) {
+            throw new OAuthAuthorizationException("Провайдер отклонил авторизацию");
+        }
+        if (code == null || code.isBlank()) {
+            throw new OAuthAuthorizationException("Провайдер не вернул authorization code");
+        }
 
         MusicPlatform musicPlatform = MusicPlatform.toPlatform(platform);
         User user = userService.findById(userId);

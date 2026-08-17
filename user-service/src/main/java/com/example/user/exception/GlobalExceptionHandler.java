@@ -1,6 +1,7 @@
 package com.example.user.exception;
 
 import com.example.user.dto.response.ApiErrorResponse;
+import com.example.user.oauth.exception.UnsupportedProviderException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
@@ -76,6 +77,14 @@ public class GlobalExceptionHandler {
             HttpServletRequest request
     ) {
         return response(HttpStatus.NOT_FOUND, "USER_NOT_FOUND", ex.getMessage(), request);
+    }
+
+    @ExceptionHandler(UnsupportedProviderException.class)
+    public ResponseEntity<ApiErrorResponse> handleUnsupportedProvider(
+            UnsupportedProviderException ex,
+            HttpServletRequest request
+    ) {
+        return response(HttpStatus.BAD_REQUEST, "UNSUPPORTED_PROVIDER", ex.getMessage(), request);
     }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)

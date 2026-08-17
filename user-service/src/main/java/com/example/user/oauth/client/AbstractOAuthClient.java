@@ -2,9 +2,12 @@ package com.example.user.oauth.client;
 
 import com.example.user.oauth.dto.OAuthTokenResponse;
 import com.example.user.oauth.dto.ProviderAccountInfo;
+import com.example.user.oauth.exception.ProviderAccountException;
+import com.example.user.oauth.exception.TokenExchangeException;
 import com.example.user.oauth.properties.OAuthProviderProperties;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestClientException;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
@@ -24,11 +27,16 @@ public abstract class AbstractOAuthClient implements OAuthProviderClient {
     public OAuthTokenResponse exchangeCode(String code) {
         log.info("[{}] Exchanging code for token", getPlatform());
 
-        OAuthTokenResponse tokenResponse = fetchToken(code);
+        OAuthTokenResponse tokenResponse;
+        try {
+            tokenResponse = fetchToken(code);
+        } catch (RestClientException ex) {
+            throw new TokenExchangeException("Не удалось обменять authorization code на токен", ex);
+        }
 
         if (tokenResponse == null || tokenResponse.accessToken() == null) {
-            log.error("[{}] Failed to get token — empty response", getPlatform());
-            throw new RuntimeException("Failed to get token from " + getPlatform()); // TODO заменить на собственное исключение
+            log.error("[{}] Ошибка при получении токена: Пустой ответ", getPlatform());
+            throw new TokenExchangeException("Провайдер вернул пустой access token");
         }
 
         log.info("[{}] Token received successfully", getPlatform());
@@ -40,11 +48,16 @@ public abstract class AbstractOAuthClient implements OAuthProviderClient {
     public ProviderAccountInfo fetchProviderAccount(String accessToken) {
         log.info("[{}] Fetching account info", getPlatform());
 
-        ProviderAccountInfo providerAccount = fetchAccountInfo(accessToken);
+        ProviderAccountInfo providerAccount;
+        try {
+            providerAccount = fetchAccountInfo(accessToken);
+        } catch (RestClientException ex) {
+            throw new ProviderAccountException("Не удалось получить профиль пользователя у провайдера", ex);
+        }
 
         if (providerAccount == null || providerAccount.id() == null) {
-            log.error("[{}] Failed to get account info — empty response", getPlatform());
-            throw new RuntimeException("Failed to get account info from " + getPlatform()); // TODO: exception
+            log.error("[{}] Ошибка при получении account info: Пустой ответ", getPlatform());
+            throw new ProviderAccountException("Провайдер вернул пустой профиль пользователя");
         }
 
         log.info("[{}] Account info received successfully", getPlatform());

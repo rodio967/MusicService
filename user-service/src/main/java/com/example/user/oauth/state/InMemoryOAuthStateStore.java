@@ -1,6 +1,7 @@
 package com.example.user.oauth.state;
 
 import com.example.user.oauth.dto.StateEntry;
+import com.example.user.oauth.exception.InvalidOAuthStateException;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -21,9 +22,9 @@ public class InMemoryOAuthStateStore implements OAuthStateStore {
     public Long getAndRemove(String state) {
         StateEntry entry = store.remove(state);
 
-        if (entry == null) throw new RuntimeException("Invalid state"); // TODO заменить исключения
+        if (entry == null) throw new InvalidOAuthStateException();
 
-        if (Instant.now().isAfter(entry.expiresAt())) throw new RuntimeException("State expired");
+        if (Instant.now().isAfter(entry.expiresAt())) throw new InvalidOAuthStateException();
 
         return entry.userId();
     }
