@@ -1,13 +1,16 @@
 package com.example.user.oauth.client;
 
+import com.example.user.oauth.dto.OAuthErrorResponse;
 import com.example.user.oauth.dto.OAuthTokenResponse;
 import com.example.user.oauth.dto.ProviderAccountInfo;
 import com.example.user.oauth.exception.ProviderAccountException;
+import com.example.user.oauth.exception.ReauthorizationRequiredException;
 import com.example.user.oauth.exception.TokenExchangeException;
 import com.example.user.oauth.properties.OAuthProviderProperties;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
+import org.springframework.web.client.RestClientResponseException;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
@@ -75,8 +78,15 @@ public abstract class AbstractOAuthClient implements OAuthProviderClient {
         OAuthTokenResponse tokenResponse;
         try {
             tokenResponse = refreshToken(refreshToken);
+        } catch (RestClientResponseException ex) {
+            if (isInvalidGrant(ex)) {
+                log.info("[{}] Refresh token is no longer valid", getPlatform());
+                throw new ReauthorizationRequiredException(getPlatform());
+            }
+
+            throw new TokenExchangeException("Провайдер отклонил refresh-запрос", ex);
         } catch (RestClientException ex) {
-            throw new TokenExchangeException("Ошибка при операции refresh", ex);
+            throw new TokenExchangeException("Ошибка соединения с OAuth-провайдером при refresh", ex);
         }
 
         if (tokenResponse == null
@@ -90,6 +100,16 @@ public abstract class AbstractOAuthClient implements OAuthProviderClient {
         log.info("[{}] Refresh completed successfully", getPlatform());
 
         return tokenResponse;
+    }
+
+    private boolean isInvalidGrant(RestClientResponseException exception) {
+        try {
+            OAuthErrorResponse response = exception.getResponseBodyAs(OAuthErrorResponse.class);
+            return response != null && "invalid_grant".equals(response.error());
+        } catch (RuntimeException ex) {
+            log.warn("[{}] Failed to parse OAuth error response", getPlatform());
+            return false;
+        }
     }
 
     protected abstract OAuthTokenResponse fetchToken(String code);
