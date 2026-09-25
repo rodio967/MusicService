@@ -1,6 +1,7 @@
 package com.example.user.oauth.controller;
 
 
+import com.example.user.oauth.dto.AuthorizationUrlResponse;
 import com.example.user.oauth.facade.OAuthFacade;
 import com.example.user.oauth.exception.InvalidOAuthStateException;
 import com.example.user.oauth.exception.OAuthAuthorizationException;
@@ -27,16 +28,14 @@ public class OAuthController {
     private final OAuthFacade facade;
 
     @GetMapping("/{platform}/authorize")
-    public ResponseEntity<Void> authorize(
+    public ResponseEntity<AuthorizationUrlResponse> authorize(
             @PathVariable String platform,
             @AuthenticationPrincipal CustomUserDetails user
     ) {
 
         URI authorizationUri = facade.beginAuthorization(platform, user.getUserId());
 
-        return ResponseEntity.status(HttpStatus.FOUND)
-                .location(authorizationUri)
-                .build();
+        return ResponseEntity.ok(new AuthorizationUrlResponse(authorizationUri.toString()));
     }
 
     @GetMapping("/{platform}/callback")

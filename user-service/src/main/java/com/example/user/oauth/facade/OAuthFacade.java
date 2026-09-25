@@ -7,6 +7,7 @@ import com.example.user.oauth.connection.OAuthConnectionEntity;
 import com.example.user.oauth.connection.OAuthConnectionService;
 import com.example.user.oauth.dto.OAuthTokenResponse;
 import com.example.user.oauth.dto.ProviderAccountInfo;
+import com.example.user.oauth.dto.StateEntry;
 import com.example.user.oauth.exception.InvalidOAuthStateException;
 import com.example.user.oauth.exception.OAuthAuthorizationException;
 import com.example.user.oauth.exception.ReauthorizationRequiredException;
@@ -30,9 +31,10 @@ public class OAuthFacade {
 
 
     public URI beginAuthorization(String platform, Long userId) {
-        OAuthProviderClient client = clients.get(MusicPlatform.toPlatform(platform));
+        MusicPlatform musicPlatform = MusicPlatform.toPlatform(platform);
+        OAuthProviderClient client = clients.get(musicPlatform);
         String state = UUID.randomUUID().toString();
-        store.save(state, userId);
+        store.save(state, userId, musicPlatform);
 
         return client.buildAuthorizationUri(state);
     }
@@ -41,7 +43,10 @@ public class OAuthFacade {
     public void completeAuthorization(String platform, String state, String code, String error) {
         if (state == null || state.isBlank()) throw new InvalidOAuthStateException();
 
-        Long userId = store.getAndRemove(state);
+        MusicPlatform musicPlatform = MusicPlatform.toPlatform(platform);
+        StateEntry stateEntry = store.getAndRemove(state);
+
+        if (stateEntry.platform() != musicPlatform) throw new InvalidOAuthStateException();
 
         if (error != null && !error.isBlank()) {
             throw new OAuthAuthorizationException("Провайдер отклонил авторизацию");
@@ -50,8 +55,7 @@ public class OAuthFacade {
             throw new OAuthAuthorizationException("Провайдер не вернул authorization code");
         }
 
-        MusicPlatform musicPlatform = MusicPlatform.toPlatform(platform);
-        User user = userService.findById(userId);
+        User user = userService.findById(stateEntry.userId());
 
         OAuthProviderClient client = clients.get(musicPlatform);
 
