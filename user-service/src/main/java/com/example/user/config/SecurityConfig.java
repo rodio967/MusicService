@@ -73,7 +73,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/internal/**").permitAll()
                         .requestMatchers("/actuator/health").permitAll()
                         .requestMatchers("/h2-console/**").permitAll()
-                        .requestMatchers("/api/oauth/*/callback").permitAll()
+                        .requestMatchers("/api/oauth/callback/*").permitAll()
                         .anyRequest().authenticated()
                 )
                 .authenticationProvider(authenticationProvider())
