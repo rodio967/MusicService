@@ -39,29 +39,24 @@ public class OAuthConnectionService {
 
         entity.setProviderAccountId(accountInfo.id());
         entity.setStatus(ConnectionStatus.ACTIVE);
-        entity.setAccessToken(tokenResponse.accessToken());
-        entity.setExpiresAt(Instant.now().plusSeconds(tokenResponse.expiresIn()));
-        if (tokenResponse.scopes() != null && !tokenResponse.scopes().isBlank()) {
-            entity.setScopes(tokenResponse.scopes());
-        }
-
-        if (tokenResponse.refreshToken() != null && !tokenResponse.refreshToken().isBlank()) {
-            entity.setRefreshToken(tokenResponse.refreshToken());
-        }
-
+        applyTokens(entity, tokenResponse);
 
         return connectionRepository.save(entity);
     }
 
     @Transactional
     public OAuthConnectionEntity updateTokens(Long connectionId, OAuthTokenResponse tokenResponse) {
-        OAuthConnectionEntity entity = connectionRepository.findById(connectionId)
-                .orElseThrow(() -> new ConnectionNotFoundException(
-                        "OAuth-подключение " + connectionId + " не найдено"
-                ));
+        OAuthConnectionEntity entity = getConnectionById(connectionId);
 
+        applyTokens(entity, tokenResponse);
+
+        return connectionRepository.save(entity);
+    }
+
+    private void applyTokens(OAuthConnectionEntity entity, OAuthTokenResponse tokenResponse) {
         entity.setAccessToken(tokenResponse.accessToken());
         entity.setExpiresAt(Instant.now().plusSeconds(tokenResponse.expiresIn()));
+
         if (tokenResponse.scopes() != null && !tokenResponse.scopes().isBlank()) {
             entity.setScopes(tokenResponse.scopes());
         }
@@ -69,8 +64,6 @@ public class OAuthConnectionService {
         if (tokenResponse.refreshToken() != null && !tokenResponse.refreshToken().isBlank()) {
             entity.setRefreshToken(tokenResponse.refreshToken());
         }
-
-        return connectionRepository.save(entity);
     }
 
     public OAuthConnectionEntity getConnectionById(Long connectionId) {
