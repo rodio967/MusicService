@@ -2,6 +2,7 @@ package com.example.user.oauth.connection;
 
 
 import com.example.user.entity.User;
+import com.example.user.enums.ConnectionStatus;
 import com.example.user.enums.MusicPlatform;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -53,6 +54,11 @@ public class OAuthConnectionEntity {
     private String scopes;
 
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 30)
+    private ConnectionStatus status = ConnectionStatus.ACTIVE;
+
+
     @Column(nullable = false, updatable = false)
     private Instant createdAt;
 
@@ -75,6 +81,10 @@ public class OAuthConnectionEntity {
 
     public boolean isTokenValid() {
         return expiresAt.isAfter(Instant.now().plusSeconds(60));
+    }
+
+    public boolean isReauthorizationRequired() {
+        return status == ConnectionStatus.REAUTHORIZATION_REQUIRED;
     }
 
 

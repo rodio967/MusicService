@@ -2,6 +2,7 @@ package com.example.user.oauth.connection;
 
 
 import com.example.user.entity.User;
+import com.example.user.enums.ConnectionStatus;
 import com.example.user.enums.MusicPlatform;
 import com.example.user.oauth.dto.OAuthTokenResponse;
 import com.example.user.oauth.dto.ProviderAccountInfo;
@@ -37,6 +38,7 @@ public class OAuthConnectionService {
 
 
         entity.setProviderAccountId(accountInfo.id());
+        entity.setStatus(ConnectionStatus.ACTIVE);
         entity.setAccessToken(tokenResponse.accessToken());
         entity.setExpiresAt(Instant.now().plusSeconds(tokenResponse.expiresIn()));
         if (tokenResponse.scopes() != null && !tokenResponse.scopes().isBlank()) {
@@ -71,8 +73,23 @@ public class OAuthConnectionService {
         return connectionRepository.save(entity);
     }
 
+    public OAuthConnectionEntity getConnectionById(Long connectionId) {
+        return connectionRepository.findById(connectionId)
+                .orElseThrow(() -> new ConnectionNotFoundException(
+                        "OAuth-подключение " + connectionId + " не найдено"
+                ));
+    }
 
-    public OAuthConnectionEntity getConnection(Long userId, MusicPlatform platform) {
+    @Transactional
+    public void markReauthorizationRequired(Long connectionId) {
+        OAuthConnectionEntity entity = getConnectionById(connectionId);
+
+        entity.setStatus(ConnectionStatus.REAUTHORIZATION_REQUIRED);
+        connectionRepository.save(entity);
+    }
+
+
+    public OAuthConnectionEntity getConnectionByUserIdAndPlatform(Long userId, MusicPlatform platform) {
         return connectionRepository.findByUserIdAndPlatform(userId, platform)
                 .orElseThrow(() -> new ConnectionNotFoundException(
                         "OAuth-подключение пользователя " + userId + " к " + platform + " не найдено"

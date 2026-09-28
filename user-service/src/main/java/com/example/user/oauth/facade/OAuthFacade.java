@@ -68,7 +68,9 @@ public class OAuthFacade {
 
     public String getValidAccessToken(Long userId, String platform) {
         MusicPlatform musicPlatform = MusicPlatform.toPlatform(platform);
-        OAuthConnectionEntity entity = connectionService.getConnection(userId, musicPlatform);
+        OAuthConnectionEntity entity = connectionService.getConnectionByUserIdAndPlatform(userId, musicPlatform);
+
+        if (entity.isReauthorizationRequired()) throw new ReauthorizationRequiredException(musicPlatform);
 
         if (entity.isTokenValid()) {
             return entity.getAccessToken();
@@ -77,10 +79,17 @@ public class OAuthFacade {
         OAuthProviderClient client = clients.get(musicPlatform);
 
         if (entity.getRefreshToken() == null || entity.getRefreshToken().isBlank()) {
+            connectionService.markReauthorizationRequired(entity.getId());
             throw new ReauthorizationRequiredException(musicPlatform);
         }
 
-        OAuthTokenResponse tokenResponse = client.refreshAccessToken(entity.getRefreshToken());
+        OAuthTokenResponse tokenResponse;
+        try {
+            tokenResponse = client.refreshAccessToken(entity.getRefreshToken());
+        } catch (ReauthorizationRequiredException ex) {
+            connectionService.markReauthorizationRequired(entity.getId());
+            throw ex;
+        }
 
         connectionService.updateTokens(entity.getId(), tokenResponse);
 
