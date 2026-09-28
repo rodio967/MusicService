@@ -19,6 +19,8 @@ import org.springframework.stereotype.Component;
 
 import java.net.URI;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.ReentrantLock;
 
 @Component
 @RequiredArgsConstructor
@@ -28,6 +30,8 @@ public class OAuthFacade {
     private final OAuthConnectionService connectionService;
     private final OAuthStateStore store;
     private final UserService userService;
+
+    private final ConcurrentHashMap<Long, ReentrantLock> refreshLocks = new ConcurrentHashMap<>();
 
 
     public URI beginAuthorization(String platform, Long userId) {
@@ -69,6 +73,25 @@ public class OAuthFacade {
     public String getValidAccessToken(Long userId, String platform) {
         MusicPlatform musicPlatform = MusicPlatform.toPlatform(platform);
         OAuthConnectionEntity entity = connectionService.getConnectionByUserIdAndPlatform(userId, musicPlatform);
+
+        if (entity.isReauthorizationRequired()) throw new ReauthorizationRequiredException(musicPlatform);
+
+        if (entity.isTokenValid()) {
+            return entity.getAccessToken();
+        }
+
+        ReentrantLock lock = refreshLocks.computeIfAbsent(entity.getId(), id -> new ReentrantLock());
+        lock.lock();
+        try {
+            return refreshAccessToken(entity.getId(), musicPlatform);
+        } finally {
+            lock.unlock();
+        }
+    }
+
+
+    private String refreshAccessToken(Long connectionId, MusicPlatform musicPlatform) {
+        OAuthConnectionEntity entity = connectionService.getConnectionById(connectionId);
 
         if (entity.isReauthorizationRequired()) throw new ReauthorizationRequiredException(musicPlatform);
 
