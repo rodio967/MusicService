@@ -53,23 +53,43 @@
     api:
       secret: ${INTERNAL_API_SECRET}
 
-  # ===== OAuth2 Spotify Configuration =====
-  spotify:
-    client-id: ${SPOTIFY_CLIENT_ID:your-spotify-client-id}
-    client-secret: ${SPOTIFY_CLIENT_SECRET:your-spotify-client-secret}
-    redirect-uri: ${SPOTIFY_REDIRECT_URI:http://localhost:8081/api/oauth/spotify/callback}
+  oauth:
+    frontend:
+      redirect-uri: ${OAUTH_FRONTEND_REDIRECT_URI:http://localhost:5173/dashboard}
+    providers:
+      spotify:
+        client-id: ${SPOTIFY_CLIENT_ID:}
+        client-secret: ${SPOTIFY_CLIENT_SECRET:}
+        redirect-uri: ${SPOTIFY_REDIRECT_URI:http://127.0.0.1:8081/api/oauth/callback/spotify}
+        auth-uri: https://accounts.spotify.com/authorize
+        token-uri: https://accounts.spotify.com/api/token
+        profile-uri: https://api.spotify.com/v1/me
+        scopes:
+          - user-read-private
+          - playlist-read-private
+          - playlist-read-collaborative
+          - playlist-modify-private
+          - playlist-modify-public
 
-  # ===== Yandex OAuth Configuration =====
-  yandex:
-    client-id: ${YANDEX_CLIENT_ID:your-yandex-client-id}
-    client-secret: ${YANDEX_CLIENT_SECRET:your-yandex-client-secret}
-    redirect-uri: http://localhost:8081/api/oauth/yandex/callback
 
-  # ===== YouTube/Google OAuth Configuration =====
-  youtube:
-    client-id: ${YOUTUBE_CLIENT_ID:your-youtube-client-id}
-    client-secret: ${YOUTUBE_CLIENT_SECRET:your-youtube-client-secret}
-    redirect-uri: http://127.0.0.1:8081/api/oauth/youtube/callback
+
+#  # ===== OAuth2 Spotify Configuration =====
+#  spotify:
+#    client-id: ${SPOTIFY_CLIENT_ID:your-spotify-client-id}
+#    client-secret: ${SPOTIFY_CLIENT_SECRET:your-spotify-client-secret}
+#    redirect-uri: ${SPOTIFY_REDIRECT_URI:http://localhost:8081/api/oauth/spotify/callback}
+#
+#  # ===== Yandex OAuth Configuration =====
+#  yandex:
+#    client-id: ${YANDEX_CLIENT_ID:your-yandex-client-id}
+#    client-secret: ${YANDEX_CLIENT_SECRET:your-yandex-client-secret}
+#    redirect-uri: http://localhost:8081/api/oauth/yandex/callback
+#
+#  # ===== YouTube/Google OAuth Configuration =====
+#  youtube:
+#    client-id: ${YOUTUBE_CLIENT_ID:your-youtube-client-id}
+#    client-secret: ${YOUTUBE_CLIENT_SECRET:your-youtube-client-secret}
+#    redirect-uri: http://127.0.0.1:8081/api/oauth/youtube/callback
 
   # ===== Logging =====
   logging:

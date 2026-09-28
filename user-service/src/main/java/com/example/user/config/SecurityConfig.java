@@ -73,8 +73,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/internal/**").permitAll()
                         .requestMatchers("/actuator/health").permitAll()
                         .requestMatchers("/h2-console/**").permitAll()
-                        .requestMatchers("/api/oauth/*/callback").permitAll()
-                        .requestMatchers("/api/oauth/*/authorize").permitAll() // для тестирования без frontend. TODO: когда появится frontend убрать
+                        .requestMatchers("/api/oauth/callback/*").permitAll()
                         .anyRequest().authenticated()
                 )
                 .authenticationProvider(authenticationProvider())
