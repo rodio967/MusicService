@@ -62,17 +62,12 @@ public class SecurityConfig {
                             );
                         })
                 )
-
-                .headers(headers -> headers
-                        .frameOptions(frame -> frame.sameOrigin())
-                )
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/register", "/api/auth/login").permitAll()
                         .requestMatchers("/api/internal/**").permitAll()
                         .requestMatchers("/actuator/health").permitAll()
-                        .requestMatchers("/h2-console/**").permitAll()
                         .requestMatchers("/api/oauth/callback/*").permitAll()
                         .anyRequest().authenticated()
                 )
