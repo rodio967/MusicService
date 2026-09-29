@@ -1,3 +1,5 @@
+name: melody-shift
+
 services:
   user-db:
     image: postgres:17
