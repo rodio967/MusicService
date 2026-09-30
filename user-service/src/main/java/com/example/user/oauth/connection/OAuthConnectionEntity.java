@@ -4,6 +4,7 @@ package com.example.user.oauth.connection;
 import com.example.user.entity.User;
 import com.example.user.enums.ConnectionStatus;
 import com.example.user.enums.MusicPlatform;
+import com.example.user.oauth.crypto.EncryptedTokenConverter;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -38,10 +39,12 @@ public class OAuthConnectionEntity {
     private String providerAccountId;
 
 
+    @Convert(converter = EncryptedTokenConverter.class)
     @Column(nullable = false, columnDefinition = "TEXT")
     private String accessToken;
 
 
+    @Convert(converter = EncryptedTokenConverter.class)
     @Column(columnDefinition = "TEXT")
     private String refreshToken;
 
