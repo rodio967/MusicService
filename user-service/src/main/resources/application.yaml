@@ -4,41 +4,29 @@
   spring:
     application:
       name: user-service
+    config:
+      import: optional:file:.env[.properties]
+
+    data:
+      redis:
+        host: ${REDIS_HOST:localhost}
+        port: ${REDIS_PORT:6379}
 
     # ===== Database Configuration =====
     datasource:
-      url: jdbc:h2:mem:userdb
-      driver-class-name: org.h2.Driver
-      username: sa
-      password: ""
+      url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5433}/${DB_NAME:user_service}
+      username: ${DB_USER}
+      password: ${DB_PASSWORD}
+
 
     jpa:
-      database-platform: org.hibernate.dialect.H2Dialect
       hibernate:
-        ddl-auto: update
+        ddl-auto: validate
+      open-in-view: false
       show-sql: false
       properties:
         hibernate:
           format_sql: true
-
-    # H2 Console
-    h2:
-      console:
-        enabled: true
-        path: /h2-console
-
-    # PostgreSQL Configuration
-    # datasource:
-    #   url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:contest}
-    #   username: ${DB_USER:postgres}
-    #   password: ${DB_PASSWORD:postgres}
-    #   driver-class-name: org.postgresql.Driver
-    #
-    # jpa:
-    #   database: postgresql
-    #   database-platform: org.hibernate.dialect.PostgreSQLDialect
-    #   hibernate:
-    #     ddl-auto: none
 
   # ===== JWT Configuration =====
   jwt:
@@ -53,23 +41,41 @@
     api:
       secret: ${INTERNAL_API_SECRET}
 
-  # ===== OAuth2 Spotify Configuration =====
-  spotify:
-    client-id: ${SPOTIFY_CLIENT_ID:your-spotify-client-id}
-    client-secret: ${SPOTIFY_CLIENT_SECRET:your-spotify-client-secret}
-    redirect-uri: ${SPOTIFY_REDIRECT_URI:http://localhost:8081/api/oauth/spotify/callback}
+  oauth:
+    frontend:
+      redirect-uri: ${OAUTH_FRONTEND_REDIRECT_URI:http://localhost:5173/dashboard}
+    http:
+      connect-timeout: 5s
+      read-timeout: 10s
+    state:
+      store: ${OAUTH_STATE_STORE:memory}
+      ttl: 10m
+    providers:
+      spotify:
+        client-id: ${SPOTIFY_CLIENT_ID:}
+        client-secret: ${SPOTIFY_CLIENT_SECRET:}
+        redirect-uri: ${SPOTIFY_REDIRECT_URI:http://127.0.0.1:8081/api/oauth/callback/spotify}
+        auth-uri: https://accounts.spotify.com/authorize
+        token-uri: https://accounts.spotify.com/api/token
+        profile-uri: https://api.spotify.com/v1/me
+        scopes:
+          - user-read-private
+          - playlist-read-private
+          - playlist-read-collaborative
+          - playlist-modify-private
+          - playlist-modify-public
+      youtube:
+        client-id: ${YOUTUBE_CLIENT_ID:}
+        client-secret: ${YOUTUBE_CLIENT_SECRET:}
+        redirect-uri: ${YOUTUBE_REDIRECT_URI:http://127.0.0.1:8081/api/oauth/callback/youtube}
+        auth-uri: https://accounts.google.com/o/oauth2/v2/auth
+        token-uri: https://oauth2.googleapis.com/token
+        profile-uri: https://openidconnect.googleapis.com/v1/userinfo
+        scopes:
+          - openid
+          - https://www.googleapis.com/auth/youtube
 
-  # ===== Yandex OAuth Configuration =====
-  yandex:
-    client-id: ${YANDEX_CLIENT_ID:your-yandex-client-id}
-    client-secret: ${YANDEX_CLIENT_SECRET:your-yandex-client-secret}
-    redirect-uri: http://localhost:8081/api/oauth/yandex/callback
 
-  # ===== YouTube/Google OAuth Configuration =====
-  youtube:
-    client-id: ${YOUTUBE_CLIENT_ID:your-youtube-client-id}
-    client-secret: ${YOUTUBE_CLIENT_SECRET:your-youtube-client-secret}
-    redirect-uri: http://127.0.0.1:8081/api/oauth/youtube/callback
 
   # ===== Logging =====
   logging:

@@ -2,8 +2,12 @@ package com.example.user.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.example.user.dto.response.ApiErrorResponse;
+import com.example.user.internal.InternalApiAuthenticationFilter;
+import com.example.user.internal.InternalApiProperties;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -29,11 +33,13 @@ import java.util.Map;
 
 @Configuration
 @EnableWebSecurity
+@EnableConfigurationProperties(InternalApiProperties.class)
 @RequiredArgsConstructor
 public class SecurityConfig {
 
     private final CustomUserDetailsService userDetailsService;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final InternalApiAuthenticationFilter internalApiAuthenticationFilter;
     private final ObjectMapper objectMapper;
 
 
@@ -62,25 +68,36 @@ public class SecurityConfig {
                             );
                         })
                 )
-
-                .headers(headers -> headers
-                        .frameOptions(frame -> frame.sameOrigin())
-                )
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/register", "/api/auth/login").permitAll()
-                        .requestMatchers("/api/internal/**").permitAll()
+                        .requestMatchers("/api/internal/**").hasRole(InternalApiAuthenticationFilter.INTERNAL_SERVICE_ROLE)
                         .requestMatchers("/actuator/health").permitAll()
-                        .requestMatchers("/h2-console/**").permitAll()
-                        .requestMatchers("/api/oauth/*/callback").permitAll()
-                        .requestMatchers("/api/oauth/*/authorize").permitAll() // для тестирования без frontend. TODO: когда появится frontend убрать
+                        .requestMatchers("/api/oauth/callback/*").permitAll()
                         .anyRequest().authenticated()
                 )
                 .authenticationProvider(authenticationProvider())
+                .addFilterBefore(internalApiAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
+    }
+
+
+    @Bean
+    public FilterRegistrationBean<JwtAuthenticationFilter> jwtFilterRegistration(JwtAuthenticationFilter filter) {
+        FilterRegistrationBean<JwtAuthenticationFilter> registration = new FilterRegistrationBean<>(filter);
+        registration.setEnabled(false);
+        return registration;
+    }
+
+    @Bean
+    public FilterRegistrationBean<InternalApiAuthenticationFilter> internalApiFilterRegistration(
+            InternalApiAuthenticationFilter filter) {
+        FilterRegistrationBean<InternalApiAuthenticationFilter> registration = new FilterRegistrationBean<>(filter);
+        registration.setEnabled(false);
+        return registration;
     }
 
 

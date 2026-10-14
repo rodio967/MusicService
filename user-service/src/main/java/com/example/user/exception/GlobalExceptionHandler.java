@@ -1,6 +1,10 @@
 package com.example.user.exception;
 
 import com.example.user.dto.response.ApiErrorResponse;
+import com.example.user.oauth.exception.ConnectionNotFoundException;
+import com.example.user.oauth.exception.ReauthorizationRequiredException;
+import com.example.user.oauth.exception.TokenExchangeException;
+import com.example.user.oauth.exception.UnsupportedProviderException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
@@ -76,6 +80,39 @@ public class GlobalExceptionHandler {
             HttpServletRequest request
     ) {
         return response(HttpStatus.NOT_FOUND, "USER_NOT_FOUND", ex.getMessage(), request);
+    }
+
+    @ExceptionHandler(UnsupportedProviderException.class)
+    public ResponseEntity<ApiErrorResponse> handleUnsupportedProvider(
+            UnsupportedProviderException ex,
+            HttpServletRequest request
+    ) {
+        return response(HttpStatus.BAD_REQUEST, "UNSUPPORTED_PROVIDER", ex.getMessage(), request);
+    }
+
+    @ExceptionHandler(ConnectionNotFoundException.class)
+    public ResponseEntity<ApiErrorResponse> handleConnectionNotFound(
+            ConnectionNotFoundException ex,
+            HttpServletRequest request
+    ) {
+        return response(HttpStatus.NOT_FOUND, "OAUTH_CONNECTION_NOT_FOUND", ex.getMessage(), request);
+    }
+
+    @ExceptionHandler(ReauthorizationRequiredException.class)
+    public ResponseEntity<ApiErrorResponse> handleReauthorizationRequired(
+            ReauthorizationRequiredException ex,
+            HttpServletRequest request
+    ) {
+        return response(HttpStatus.CONFLICT, "REAUTHORIZATION_REQUIRED", ex.getMessage(), request);
+    }
+
+    @ExceptionHandler(TokenExchangeException.class)
+    public ResponseEntity<ApiErrorResponse> handleTokenExchange(
+            TokenExchangeException ex,
+            HttpServletRequest request
+    ) {
+        log.warn("OAuth token request failed on {} {}", request.getMethod(), request.getRequestURI());
+        return response(HttpStatus.BAD_GATEWAY, "TOKEN_EXCHANGE_FAILED", ex.getMessage(), request);
     }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)

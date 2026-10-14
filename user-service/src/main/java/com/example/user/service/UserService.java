@@ -26,8 +26,6 @@ import com.example.user.security.JwtTokenProvider;
 
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -55,16 +53,19 @@ public class UserService {
         return userRepository.save(user);
     }
 
-    public Optional<User> findByUsername(String username) {
-        return userRepository.findByUsername(username);
+    public User findByUsername(String username) {
+        return userRepository.findByUsername(username)
+                .orElseThrow(() -> new UserNotFoundException(username));
     }
 
-    public Optional<User> findByUsernameWithRoles(String username) {
-        return userRepository.findByUsernameWithRoles(username);
+    public User findByUsernameWithRoles(String username) {
+        return userRepository.findByUsernameWithRoles(username)
+                .orElseThrow(() -> new UserNotFoundException(username));
     }
 
-    public Optional<User> findById(Long id) {
-        return userRepository.findById(id);
+    public User findById(Long id) {
+        return userRepository.findById(id)
+                .orElseThrow(() -> new UserNotFoundException(id));
     }
 
     public LoginResponse login(LoginRequest request) {
@@ -79,8 +80,7 @@ public class UserService {
 
         String jwt = jwtTokenProvider.generateToken(authentication);
 
-        User user = findByUsernameWithRoles(authentication.getName())
-                .orElseThrow(() -> new UserNotFoundException(authentication.getName()));
+        User user = findByUsernameWithRoles(authentication.getName());
 
         return new LoginResponse(
                 jwt,
