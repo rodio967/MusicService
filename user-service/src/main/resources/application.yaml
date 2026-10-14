@@ -80,6 +80,6 @@
   # ===== Logging =====
   logging:
     level:
-      "ru.nsu.melody_shift": DEBUG
+      "com.example.user": DEBUG
       "org.springframework.security": DEBUG
       "org.hibernate.SQL": WARN
