@@ -1,0 +1,25 @@
+server:
+  port: 8082
+
+spring:
+  application:
+    name: provider-service
+  config:
+    import: optional:file:.env[.properties]
+
+  threads:
+    virtual:
+      enabled: true
+
+internal:
+  api:
+    secret: ${INTERNAL_API_SECRET}
+
+user-service:
+  base-url: ${USER_SERVICE_URL:http://localhost:8081}
+  connect-timeout: 2s
+  read-timeout: 15s
+
+logging:
+  level:
+    "com.example.provider": DEBUG

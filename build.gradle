@@ -33,12 +33,3 @@ subprojects {
         useJUnitPlatform()
     }
 }
-
-//project(':common') {
-//    bootJar {
-//        enabled = false
-//    }
-//    jar {
-//        enabled = true
-//    }
-//}
