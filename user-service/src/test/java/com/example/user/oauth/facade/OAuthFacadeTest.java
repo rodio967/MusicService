@@ -59,7 +59,7 @@ class OAuthFacadeTest {
         when(client.refreshAccessToken("refresh-token"))
                 .thenThrow(new ReauthorizationRequiredException(MusicPlatform.SPOTIFY));
 
-        assertThatThrownBy(() -> facade.getValidAccessToken(USER_ID, "spotify"))
+        assertThatThrownBy(() -> facade.getConnectionWithValidToken(USER_ID, "spotify"))
                 .isInstanceOf(ReauthorizationRequiredException.class);
 
         verify(connectionService).markReauthorizationRequired(CONNECTION_ID);
@@ -72,7 +72,7 @@ class OAuthFacadeTest {
         connection.setStatus(ConnectionStatus.REAUTHORIZATION_REQUIRED);
         givenConnection(connection);
 
-        assertThatThrownBy(() -> facade.getValidAccessToken(USER_ID, "spotify"))
+        assertThatThrownBy(() -> facade.getConnectionWithValidToken(USER_ID, "spotify"))
                 .isInstanceOf(ReauthorizationRequiredException.class);
 
         verifyNoInteractions(client);
@@ -82,10 +82,20 @@ class OAuthFacadeTest {
     void marksConnectionWhenRefreshTokenIsMissing() {
         givenConnection(expiredConnection(null));
 
-        assertThatThrownBy(() -> facade.getValidAccessToken(USER_ID, "spotify"))
+        assertThatThrownBy(() -> facade.getConnectionWithValidToken(USER_ID, "spotify"))
                 .isInstanceOf(ReauthorizationRequiredException.class);
 
         verify(connectionService).markReauthorizationRequired(CONNECTION_ID);
+        verifyNoInteractions(client);
+    }
+
+    @Test
+    void returnsValidConnectionWithoutRefresh() {
+        givenConnection(refreshedConnection());
+
+        OAuthConnectionEntity connection = facade.getConnectionWithValidToken(USER_ID, "spotify");
+
+        assertThat(connection.getAccessToken()).isEqualTo("new-access-token");
         verifyNoInteractions(client);
     }
 
@@ -95,10 +105,12 @@ class OAuthFacadeTest {
         OAuthTokenResponse tokenResponse =
                 new OAuthTokenResponse("new-access-token", "Bearer", 3600L, null, null);
         when(client.refreshAccessToken("refresh-token")).thenReturn(tokenResponse);
+        when(connectionService.updateTokens(CONNECTION_ID, tokenResponse)).thenReturn(refreshedConnection());
 
-        String accessToken = facade.getValidAccessToken(USER_ID, "spotify");
+        OAuthConnectionEntity connection = facade.getConnectionWithValidToken(USER_ID, "spotify");
 
-        assertThat(accessToken).isEqualTo("new-access-token");
+        assertThat(connection.getAccessToken()).isEqualTo("new-access-token");
+        assertThat(connection.getProviderAccountId()).isEqualTo("spotify-user");
         verify(connectionService).updateTokens(CONNECTION_ID, tokenResponse);
         verify(connectionService, never()).markReauthorizationRequired(anyLong());
     }
@@ -119,9 +131,7 @@ class OAuthFacadeTest {
             return tokenResponse;
         });
         when(connectionService.updateTokens(CONNECTION_ID, tokenResponse)).thenAnswer(invocation -> {
-            OAuthConnectionEntity refreshed = expiredConnection("refresh-token");
-            refreshed.setAccessToken("new-access-token");
-            refreshed.setExpiresAt(Instant.now().plusSeconds(3600));
+            OAuthConnectionEntity refreshed = refreshedConnection();
             storedConnection.set(refreshed);
             return refreshed;
         });
@@ -130,17 +140,17 @@ class OAuthFacadeTest {
         ExecutorService executor = Executors.newFixedThreadPool(threads);
         CountDownLatch start = new CountDownLatch(1);
         try {
-            List<Future<String>> results = new ArrayList<>();
+            List<Future<OAuthConnectionEntity>> results = new ArrayList<>();
             for (int i = 0; i < threads; i++) {
                 results.add(executor.submit(() -> {
                     start.await();
-                    return facade.getValidAccessToken(USER_ID, "spotify");
+                    return facade.getConnectionWithValidToken(USER_ID, "spotify");
                 }));
             }
             start.countDown();
 
-            for (Future<String> result : results) {
-                assertThat(result.get(5, TimeUnit.SECONDS)).isEqualTo("new-access-token");
+            for (Future<OAuthConnectionEntity> result : results) {
+                assertThat(result.get(5, TimeUnit.SECONDS).getAccessToken()).isEqualTo("new-access-token");
             }
         } finally {
             executor.shutdownNow();
@@ -158,9 +168,17 @@ class OAuthFacadeTest {
         OAuthConnectionEntity connection = new OAuthConnectionEntity();
         connection.setId(CONNECTION_ID);
         connection.setPlatform(MusicPlatform.SPOTIFY);
+        connection.setProviderAccountId("spotify-user");
         connection.setAccessToken("old-access-token");
         connection.setRefreshToken(refreshToken);
         connection.setExpiresAt(Instant.now().minusSeconds(10));
+        return connection;
+    }
+
+    private OAuthConnectionEntity refreshedConnection() {
+        OAuthConnectionEntity connection = expiredConnection("refresh-token");
+        connection.setAccessToken("new-access-token");
+        connection.setExpiresAt(Instant.now().plusSeconds(3600));
         return connection;
     }
 }

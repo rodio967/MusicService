@@ -64,6 +64,7 @@
           - playlist-read-collaborative
           - playlist-modify-private
           - playlist-modify-public
+          - user-library-read
       youtube:
         client-id: ${YOUTUBE_CLIENT_ID:}
         client-secret: ${YOUTUBE_CLIENT_SECRET:}

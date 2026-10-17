@@ -1,6 +1,7 @@
 package com.example.user.internal;
 
 import com.example.user.internal.dto.AccessTokenResponse;
+import com.example.user.oauth.connection.OAuthConnectionEntity;
 import com.example.user.oauth.facade.OAuthFacade;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -22,8 +23,12 @@ public class InternalTokenController {
             @PathVariable Long userId,
             @PathVariable String platform
     ) {
-        String accessToken = facade.getValidAccessToken(userId, platform);
+        OAuthConnectionEntity entity = facade.getConnectionWithValidToken(userId, platform);
 
-        return ResponseEntity.ok(new AccessTokenResponse(accessToken));
+        return ResponseEntity.ok(new AccessTokenResponse(
+                entity.getAccessToken(),
+                entity.getExpiresAt(),
+                entity.getProviderAccountId())
+        );
     }
 }

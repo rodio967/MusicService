@@ -1,3 +1,9 @@
 package com.example.user.internal.dto;
 
-public record AccessTokenResponse(String accessToken) {}
+import java.time.Instant;
+
+public record AccessTokenResponse(
+        String accessToken,
+        Instant expiresAt,
+        String providerAccountId
+) {}

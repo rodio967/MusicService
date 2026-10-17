@@ -75,14 +75,14 @@ public class OAuthFacade {
     }
 
 
-    public String getValidAccessToken(Long userId, String platform) {
+    public OAuthConnectionEntity getConnectionWithValidToken(Long userId, String platform) {
         MusicPlatform musicPlatform = MusicPlatform.toPlatform(platform);
         OAuthConnectionEntity entity = connectionService.getConnectionByUserIdAndPlatform(userId, musicPlatform);
 
         if (entity.isReauthorizationRequired()) throw new ReauthorizationRequiredException(musicPlatform);
 
         if (entity.isTokenValid()) {
-            return entity.getAccessToken();
+            return entity;
         }
 
         ReentrantLock lock = refreshLockFor(entity.getId());
@@ -100,13 +100,13 @@ public class OAuthFacade {
     }
 
 
-    private String refreshAccessToken(Long connectionId, MusicPlatform musicPlatform) {
+    private OAuthConnectionEntity refreshAccessToken(Long connectionId, MusicPlatform musicPlatform) {
         OAuthConnectionEntity entity = connectionService.getConnectionById(connectionId);
 
         if (entity.isReauthorizationRequired()) throw new ReauthorizationRequiredException(musicPlatform);
 
         if (entity.isTokenValid()) {
-            return entity.getAccessToken();
+            return entity;
         }
 
         OAuthProviderClient client = clients.get(musicPlatform);
@@ -124,9 +124,7 @@ public class OAuthFacade {
             throw ex;
         }
 
-        connectionService.updateTokens(entity.getId(), tokenResponse);
-
-        return tokenResponse.accessToken();
+        return connectionService.updateTokens(entity.getId(), tokenResponse);
     }
 
 
