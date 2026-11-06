@@ -18,7 +18,11 @@ public final class ErrorCodes {
     public static final String TOKEN_EXCHANGE_FAILED = "TOKEN_EXCHANGE_FAILED";
 
     // provider-service
+    public static final String UNSUPPORTED_PLATFORM = "UNSUPPORTED_PLATFORM";
+    public static final String INVALID_CURSOR = "INVALID_CURSOR";
     public static final String PROVIDER_NOT_CONNECTED = "PROVIDER_NOT_CONNECTED";
+    public static final String PROVIDER_ACCESS_DENIED = "PROVIDER_ACCESS_DENIED";
+    public static final String RATE_LIMITED = "RATE_LIMITED";
     public static final String PROVIDER_UNAVAILABLE = "PROVIDER_UNAVAILABLE";
     public static final String USER_SERVICE_UNAVAILABLE = "USER_SERVICE_UNAVAILABLE";
 

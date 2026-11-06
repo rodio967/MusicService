@@ -7,6 +7,7 @@ import com.example.provider.exception.ProviderNotConnectedException;
 import com.example.provider.exception.ProviderUnavailableException;
 import com.example.provider.exception.ReauthorizationRequiredException;
 import com.example.provider.exception.UserServiceUnavailableException;
+import com.example.provider.model.PlatformAccess;
 import com.example.provider.security.InternalApiProperties;
 import com.example.provider.security.InternalSecretFilter;
 import com.example.provider.usertoken.dto.AccessTokenResponse;
@@ -35,7 +36,7 @@ public class UserServiceTokenClient {
         this.internalSecret = internalApiProperties.secret();
     }
 
-    public String getAccessToken(Long userId, MusicPlatform platform) {
+    public PlatformAccess getPlatformAccess(Long userId, MusicPlatform platform) {
         AccessTokenResponse response;
         try {
             response = restClient.get()
@@ -52,7 +53,8 @@ public class UserServiceTokenClient {
         if (response == null || response.accessToken() == null || response.accessToken().isBlank()) {
             throw new UserServiceUnavailableException(new IllegalStateException("Empty access token in response"));
         }
-        return response.accessToken();
+
+        return new PlatformAccess(response.accessToken(), response.providerAccountId());
     }
 
 

@@ -5,6 +5,7 @@ import com.example.common.ErrorCodes;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -32,6 +33,18 @@ public class GlobalExceptionHandler {
                     ex.getCause() != null ? ex.getCause().toString() : ex.getMessage());
         }
         return response(ex.getStatus(), ex.getCode(), ex.getMessage(), request);
+    }
+
+    @ExceptionHandler(RateLimitedException.class)
+    public ResponseEntity<ApiErrorResponse> handleRateLimited(RateLimitedException ex, HttpServletRequest request) {
+        ResponseEntity<ApiErrorResponse> response = handleApiException(ex, request);
+        if (ex.getRetryAfter() == null) {
+            return response;
+        }
+
+        return ResponseEntity.status(response.getStatusCode())
+                .header(HttpHeaders.RETRY_AFTER, String.valueOf(ex.getRetryAfter().toSeconds()))
+                .body(response.getBody());
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

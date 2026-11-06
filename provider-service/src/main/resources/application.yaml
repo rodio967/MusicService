@@ -20,6 +20,12 @@ user-service:
   connect-timeout: 2s
   read-timeout: 15s
 
+providers:
+  spotify:
+    base-url: https://api.spotify.com/v1
+    connect-timeout: 5s
+    read-timeout: 10s
+
 logging:
   level:
     "com.example.provider": DEBUG
